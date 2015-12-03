@@ -11,10 +11,10 @@ This information is used to devise how many Ports need to be generated.
 # To use the Tool
 
 ```
-python deploy_template_replace.py <Marathon_Endpoint> <Marathon-Deployment-Manifest-Template-File>
+python marathon_port_gen.py <Marathon_Endpoint> <Marathon-Deployment-Manifest-Template-File>
 ```
 
 Example:- 
 ```
-python deploy_template_replace.py 10.53.15.219:18080 wcs-deployment-manifest-template1.json
+python marathon_port_gen.py 10.53.15.219:18080 wcs-deployment-manifest-template1.json
 ```
