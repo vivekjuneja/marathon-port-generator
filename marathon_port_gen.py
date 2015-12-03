@@ -6,10 +6,12 @@ import json
 import requests
 
 
-startPortNum=1
-endPortNum=1000
-
-def get_unique_ports(fileName):
+'''
+Read the Marathon deployment manifest template file and search for all places where SERVICE-DISCOVERY-PORT term exists.
+Add all such occurences into a Set
+Return the length 
+'''
+def get_num_unique_ports(fileName):
 	f = open(fileName, 'rt')
 	data = str(f.read())
 	f.close()
@@ -28,7 +30,6 @@ def get_unique_ports(fileName):
 '''
 Get all ports currently allocated by Marathon
 '''
-
 def get_used_ports(marathon_endpoint, only_use_groups):
 	r = requests.get("http://" + marathon_endpoint + "/v2/groups")
 	#json_file = open(fileName)
@@ -54,25 +55,34 @@ def get_used_ports(marathon_endpoint, only_use_groups):
 	return used_ports
 
 
+'''
+Return the largest Port allocated till now
+'''
 def get_max_used_port_number(marathon_endpoint, only_use_groups):
 	'''parse Marathon manifest to find used service discovery ports'''
 	#print marathon_endpoint	
 	return max(get_used_ports(marathon_endpoint, only_use_groups))
 
 
+'''
+Generate a new set of port port_numbers
+''' 
 def generate_port_numbers(num_of_ports, max_used_port_number):
 	
-	port_num=[]
+	port_nums=[]
 	port_counter=0
 	#print "max_used_port_number : "+ str(max_used_port_number)
 	#print "num_of_ports : " + str(num_of_ports)
 
 	for i in range(1,num_of_ports+1):
-		port_num.append(max_used_port_number + i)
+		port_nums.append(max_used_port_number + i)
 
-	return port_num
+	return port_nums
 
 
+'''
+For decorating the output as per needs of Bash Script
+'''
 def render_bash_output(array):
 	bash_array=""
 	for item in array:
@@ -83,8 +93,6 @@ def render_bash_output(array):
 if __name__ == '__main__':
 	max_used_portnum = 0
 	max_used_portnum = get_max_used_port_number(argv[1:][0], True)
-	#print "max_used_portnum : " + str(max_used_portnum)
-	port_numbers = generate_port_numbers(get_unique_ports(argv[1:][1]), max_used_portnum)
+	port_numbers = generate_port_numbers(get_num_unique_ports(argv[1:][1]), max_used_portnum)
 	print str(render_bash_output(port_numbers))
-	#print generate_port_numbers(get_unique_ports(argv[1:][0]))
 
