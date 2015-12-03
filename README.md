@@ -15,5 +15,6 @@ python deploy_template_replace.py <Marathon_Endpoint> <Marathon-Deployment-Manif
 ```
 
 Example:- 
-
+```
 python deploy_template_replace.py 10.53.15.219:18080 wcs-deployment-manifest-template1.json
+```
