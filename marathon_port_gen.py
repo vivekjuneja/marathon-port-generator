@@ -11,6 +11,8 @@ Read the Marathon deployment manifest template file and search for all places wh
 Add all such occurences into a Set
 Return the length 
 '''
+init_discovery_port = 20000
+
 def get_num_unique_ports(fileName):
 	f = open(fileName, 'rt')
 	data = str(f.read())
@@ -23,7 +25,7 @@ def get_num_unique_ports(fileName):
          #print(data[m.end()-2: m.end()])
          unique_set.add(data[m.end()-2: m.end()])
         
-   #	print unique_set
+   	#print unique_set
     	return len(unique_set)
 
 
@@ -45,8 +47,9 @@ def get_used_ports(marathon_endpoint, only_use_groups):
 			#print "group:" + str(group["groups"])
 			for each_group in group["groups"]:
 				if (len(each_group["apps"])>0):
-				#	print each_group["apps"][0]["ports"]
-					used_ports.append(each_group["apps"][0]["ports"][0])
+					#print each_group["apps"][0]["ports"]
+					for each_port in each_group["apps"][0]["ports"]:
+						used_ports.append(each_port)
 				#print "\n"
 
 			#print "\n"
@@ -61,7 +64,13 @@ Return the largest Port allocated till now
 def get_max_used_port_number(marathon_endpoint, only_use_groups):
 	'''parse Marathon manifest to find used service discovery ports'''
 	#print marathon_endpoint	
-	return max(get_used_ports(marathon_endpoint, only_use_groups))
+	used_ports = get_used_ports(marathon_endpoint, only_use_groups)
+	max_used_port = 0
+	if len(used_ports)==0:
+		max_used_port = init_discovery_port
+	else:
+		max_used_port = max(used_ports)
+	return max_used_port
 
 
 '''
