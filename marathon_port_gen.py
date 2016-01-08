@@ -29,6 +29,34 @@ def get_num_unique_ports(fileName):
     	return len(unique_set)
 
 
+
+
+'''
+Get all ports currently allocated by Marathon
+'''
+def get_used_ports_for_app_grp(marathon_endpoint, app_grp_id):
+	r = requests.get("http://" + marathon_endpoint + "/v2/groups/"+app_grp_id)
+	#json_file = open(fileName)
+	data = json.loads(r.content) 
+
+	#print "--------- : " + str(data["groups"])
+	used_ports=[]
+
+	for app in data["groups"]:
+			#print "apps:" + str(app)
+			for port in app["apps"][0]["ports"]:
+				#print port
+				used_ports.append(port)
+				#print "\n"
+
+			#print "\n"
+
+	#print used_ports
+	return used_ports
+
+
+
+
 '''
 Get all ports currently allocated by Marathon
 '''
@@ -101,7 +129,13 @@ def render_bash_output(array):
 
 if __name__ == '__main__':
 	max_used_portnum = 0
-	max_used_portnum = get_max_used_port_number(argv[1:][0], True)
-	port_numbers = generate_port_numbers(get_num_unique_ports(argv[1:][1]), max_used_portnum)
-	print str(render_bash_output(port_numbers))
+	deploy_type = argv[1:][0]
+	if (deploy_type=="new"):
+		#print "getting port allocated for all deployed apps on marathon" 
+		max_used_portnum = get_max_used_port_number(argv[1:][1], True)
+		port_numbers = generate_port_numbers(get_num_unique_ports(argv[1:][2]), max_used_portnum)
+		print str(render_bash_output(port_numbers))
+	elif (deploy_type=="update"):
+		#print "getting port allocated for existing app " + argv[1:][2]
+		print render_bash_output(get_used_ports_for_app_grp(argv[1:][1], argv[1:][2]))
 
