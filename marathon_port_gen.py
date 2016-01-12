@@ -31,6 +31,24 @@ def get_num_unique_ports(fileName):
 
 
 
+def get_num_unique_ports_map(fileName):
+	f = open(fileName, 'rt')
+	data = str(f.read())
+	f.close()
+
+	'''Store the unique ports that are declared in the manifest. Used to find out number of ports to be generated'''
+	unique_set=Set()
+	
+	for m in re.finditer('SERVICE-DISCOVERY-PORT[0-9][0-9]', data):
+         print(data[m.end()-2: m.end()])
+         unique_set.add(data[m.end()-2: m.end()])
+        
+        
+   	print unique_set
+    	return len(unique_set)
+
+
+
 '''
 Get all ports currently allocated by Marathon
 '''
@@ -44,8 +62,10 @@ def get_used_ports_for_app_grp(marathon_endpoint, app_grp_id):
 
 	for app in data["groups"]:
 			#print "apps:" + str(app)
+			
 			for port in app["apps"][0]["ports"]:
 				#print port
+				#print app["apps"][0]["id"] + " : " + str(port)
 				used_ports.append(port)
 				#print "\n"
 
@@ -138,4 +158,5 @@ if __name__ == '__main__':
 	elif (deploy_type=="update"):
 		#print "getting port allocated for existing app " + argv[1:][2]
 		print render_bash_output(get_used_ports_for_app_grp(argv[1:][1], argv[1:][2]))
+		#print get_num_unique_ports_map(argv[1:][3])
 
