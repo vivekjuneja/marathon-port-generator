@@ -86,13 +86,16 @@ def get_ports_to_replace(marathon_endpoint, app_grp_id, fileName):
 	appid_port_map_deployed = get_appid_ports_map_deployed(marathon_endpoint, app_grp_id)
 
 	ports = []
-	
-	for deployed_appId in appid_port_map:
-		port_array =  appid_port_map_deployed[deployed_appId]
-		for port in port_array:
-			ports.append(port)
+
+	if len(appid_port_map_deployed)!=0:
+		for deployed_appId in appid_port_map:
+			port_array =  appid_port_map_deployed[deployed_appId]
+			for port in port_array:
+				ports.append(port)
 
 	return ports
+
+
 
 ''' Get all ports currently allocated by Marathon '''
 def get_used_ports(marathon_endpoint, only_use_groups):
