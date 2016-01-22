@@ -4,6 +4,7 @@ from sets import Set
 import random
 import json
 import requests
+from collections import OrderedDict
 
 
 '''
@@ -41,7 +42,7 @@ def get_num_unique_ports(fileName):
 ''' Find App ID and relevant assigned port '''
 def get_appid_port_map(json_data):
 
-	appid_port_dict={}
+	appid_port_dict=OrderedDict()
 
 	for app in json_data["groups"]:
 			ports = []
@@ -53,9 +54,7 @@ def get_appid_port_map(json_data):
 				#print port 
 
 			appid_withgroup = app["apps"][0]["id"]
-			print appid_withgroup
 			appid = appid_withgroup.rfind("/")
-			#print appid_withgroup[appid+1:]
 			appid_port_dict[appid_withgroup[appid+1:]] = ports
 				
 	return appid_port_dict
@@ -66,7 +65,6 @@ def get_appid_ports_map_manifest(fileName):
 	data = get_data_from_file(fileName)
 
 	json_data = json.loads(data) 
-	#print json_data
 
 	return get_appid_port_map(json_data)
 
@@ -84,21 +82,17 @@ def get_appid_ports_map_deployed(marathon_endpoint, app_grp_id):
 
 def get_ports_to_replace(marathon_endpoint, app_grp_id, fileName):
 	appid_port_map = get_appid_ports_map_manifest(fileName)
-	print "#App ID Port Map from the Manifest#"
-	print appid_port_map
 
-	#appid_port_map_deployed = get_appid_ports_map_deployed(marathon_endpoint, app_grp_id)
-	#print "#App ID Port Map from the Deployed copy#"
-	#print appid_port_map_deployed
+	appid_port_map_deployed = get_appid_ports_map_deployed(marathon_endpoint, app_grp_id)
 
+	ports = []
+	
+	for deployed_appId in appid_port_map:
+		port_array =  appid_port_map_deployed[deployed_appId]
+		for port in port_array:
+			ports.append(port)
 
-	'''
-	for deployed_appId in appid_port_map_deployed:
-		deployed_appId_suffix = 
-		for manifest_appId in appid_port_map:
-	'''	
-
-
+	return ports
 
 ''' Get all ports currently allocated by Marathon '''
 def get_used_ports(marathon_endpoint, only_use_groups):
@@ -181,6 +175,5 @@ if __name__ == '__main__':
 		#print render_bash_output(get_appid_ports_map_deployed(argv[1:][1], argv[1:][2]))
 		#print get_appid_ports_map_deployed(argv[1:][1], argv[1:][2])
 		#print get_appid_ports_map_manifest(argv[1:][3])
-		get_ports_to_replace(argv[1:][1], argv[1:][2], argv[1:][3])
-		#print get_num_unique_ports_map(argv[1:][3])
+		print render_bash_output(get_ports_to_replace(argv[1:][1], argv[1:][2], argv[1:][3]))
 
