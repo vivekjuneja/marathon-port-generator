@@ -41,25 +41,24 @@ def get_num_unique_ports(fileName):
 ''' Find App ID and relevant assigned port '''
 def get_appid_port_map(json_data):
 
-	appid_port_set={}
+	appid_port_dict={}
 
 	for app in json_data["groups"]:
 			ports = []
 			ports_counter = 0
 			
-			#print app["apps"][0]["id"]
-
 			for port in app["apps"][0]["ports"]:
 				ports.append(str(port))
 				ports_counter =+ 1 
 				#print port 
 
 			appid_withgroup = app["apps"][0]["id"]
+			print appid_withgroup
 			appid = appid_withgroup.rfind("/")
 			#print appid_withgroup[appid+1:]
-			appid_port_set[appid_withgroup[appid+1:]] = ports
+			appid_port_dict[appid_withgroup[appid+1:]] = ports
 				
-	return appid_port_set
+	return appid_port_dict
 
 
 ''' Find App ID and relevant assigned port in the Manifest '''
@@ -67,6 +66,7 @@ def get_appid_ports_map_manifest(fileName):
 	data = get_data_from_file(fileName)
 
 	json_data = json.loads(data) 
+	#print json_data
 
 	return get_appid_port_map(json_data)
 
@@ -84,14 +84,12 @@ def get_appid_ports_map_deployed(marathon_endpoint, app_grp_id):
 
 def get_ports_to_replace(marathon_endpoint, app_grp_id, fileName):
 	appid_port_map = get_appid_ports_map_manifest(fileName)
-
-	appid_port_map_deployed = get_appid_ports_map_deployed(marathon_endpoint, fileName)
-
 	print "#App ID Port Map from the Manifest#"
 	print appid_port_map
 
-	print "#App ID Port Map from the Deployed copy#"
-	print appid_port_map_deployed
+	#appid_port_map_deployed = get_appid_ports_map_deployed(marathon_endpoint, app_grp_id)
+	#print "#App ID Port Map from the Deployed copy#"
+	#print appid_port_map_deployed
 
 
 	'''
