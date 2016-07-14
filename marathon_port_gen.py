@@ -4,6 +4,7 @@ from sets import Set
 import random
 import json
 import requests
+from collections import OrderedDict
 
 
 '''
@@ -12,16 +13,25 @@ Add all such occurences into a Set
 Return the length 
 '''
 init_discovery_port = 20000
+service_discovery_port_regex = "SERVICE-DISCOVERY-PORT[0-9][0-9]"
 
-def get_num_unique_ports(fileName):
+''' Common Method to parse and read content from a file '''
+def get_data_from_file(fileName):
 	f = open(fileName, 'rt')
 	data = str(f.read())
 	f.close()
+	return data
+
+
+''' Find out unique occurences of service discovery port template variable'''
+def get_num_unique_ports(fileName):
+	
+	data = get_data_from_file(fileName)
 
 	'''Store the unique ports that are declared in the manifest. Used to find out number of ports to be generated'''
 	unique_set=Set()
 	
-	for m in re.finditer('SERVICE-DISCOVERY-PORT[0-9][0-9]', data):
+	for m in re.finditer(service_discovery_port_regex, data):
          #print(data[m.end()-2: m.end()])
          unique_set.add(data[m.end()-2: m.end()])
         
@@ -29,57 +39,65 @@ def get_num_unique_ports(fileName):
     	return len(unique_set)
 
 
+''' Find App ID and relevant assigned port '''
+def get_appid_port_map(json_data):
 
+	appid_port_dict=OrderedDict()
 
-def get_num_unique_ports_map(fileName):
-	f = open(fileName, 'rt')
-	data = str(f.read())
-	f.close()
-
-	'''Store the unique ports that are declared in the manifest. Used to find out number of ports to be generated'''
-	unique_set=Set()
-	
-	for m in re.finditer('SERVICE-DISCOVERY-PORT[0-9][0-9]', data):
-         print(data[m.end()-2: m.end()])
-         unique_set.add(data[m.end()-2: m.end()])
-        
-        
-   	print unique_set
-    	return len(unique_set)
-
-
-
-'''
-Get all ports currently allocated by Marathon
-'''
-def get_used_ports_for_app_grp(marathon_endpoint, app_grp_id):
-	r = requests.get("http://" + marathon_endpoint + "/v2/groups/"+app_grp_id)
-	#json_file = open(fileName)
-	data = json.loads(r.content) 
-
-	#print "--------- : " + str(data["groups"])
-	used_ports=[]
-
-	for app in data["groups"]:
-			#print "apps:" + str(app)
+	for app in json_data["groups"]:
+			ports = []
+			ports_counter = 0
 			
 			for port in app["apps"][0]["ports"]:
-				#print port
-				#print app["apps"][0]["id"] + " : " + str(port)
-				used_ports.append(port)
-				#print "\n"
+				ports.append(str(port))
+				ports_counter =+ 1 
+				#print port 
 
-			#print "\n"
-
-	#print used_ports
-	return used_ports
-
-
+			appid_withgroup = app["apps"][0]["id"]
+			appid = appid_withgroup.rfind("/")
+			appid_port_dict[appid_withgroup[appid+1:]] = ports
+				
+	return appid_port_dict
 
 
-'''
-Get all ports currently allocated by Marathon
-'''
+''' Find App ID and relevant assigned port in the Manifest '''
+def get_appid_ports_map_manifest(fileName):
+	data = get_data_from_file(fileName)
+
+	json_data = json.loads(data) 
+
+	return get_appid_port_map(json_data)
+
+
+''' Find App ID and relevant assigned port for an existing deployed app grp'''
+def get_appid_ports_map_deployed(marathon_endpoint, app_grp_id):
+	r = requests.get("http://" + marathon_endpoint + "/v2/groups/"+app_grp_id)
+	json_data = json.loads(r.content) 
+
+	if "message" in json_data:
+		return []
+
+	return get_appid_port_map(json_data)
+
+
+def get_ports_to_replace(marathon_endpoint, app_grp_id, fileName):
+	appid_port_map = get_appid_ports_map_manifest(fileName)
+
+	appid_port_map_deployed = get_appid_ports_map_deployed(marathon_endpoint, app_grp_id)
+
+	ports = []
+
+	if len(appid_port_map_deployed)!=0:
+		for deployed_appId in appid_port_map:
+			port_array =  appid_port_map_deployed[deployed_appId]
+			for port in port_array:
+				ports.append(port)
+
+	return ports
+
+
+
+''' Get all ports currently allocated by Marathon '''
 def get_used_ports(marathon_endpoint, only_use_groups):
 	r = requests.get("http://" + marathon_endpoint + "/v2/groups")
 	#json_file = open(fileName)
@@ -140,7 +158,7 @@ def generate_port_numbers(num_of_ports, max_used_port_number):
 '''
 For decorating the output as per needs of Bash Script
 '''
-def render_bash_output(array):
+def render_bash_output(array):      
 	bash_array=""
 	for item in array:
 		bash_array += str(item) + " "
@@ -157,6 +175,8 @@ if __name__ == '__main__':
 		print str(render_bash_output(port_numbers))
 	elif (deploy_type=="update"):
 		#print "getting port allocated for existing app " + argv[1:][2]
-		print render_bash_output(get_used_ports_for_app_grp(argv[1:][1], argv[1:][2]))
-		#print get_num_unique_ports_map(argv[1:][3])
+		#print render_bash_output(get_appid_ports_map_deployed(argv[1:][1], argv[1:][2]))
+		#print get_appid_ports_map_deployed(argv[1:][1], argv[1:][2])
+		#print get_appid_ports_map_manifest(argv[1:][3])
+		print render_bash_output(get_ports_to_replace(argv[1:][1], argv[1:][2], argv[1:][3]))
 
